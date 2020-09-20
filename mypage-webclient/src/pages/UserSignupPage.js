@@ -1,5 +1,7 @@
 import React from 'react';
 import { signup } from '../api/apiCalls';
+import Logo from '../Logo.png';
+import Input from '../components/Input';
 
 class UserSignupPage extends React.Component {
 
@@ -8,13 +10,26 @@ class UserSignupPage extends React.Component {
         displayName: null,
         password: null,
         passwordRepeat: null,
-        pendingApiCall: false
+        pendingApiCall: false,
+        errors: {}
     }
 
     onChange = event => {
-        const { name, value } = event.target
+        const { name, value } = event.target;
+        const errors = { ...this.state.errors };
+        errors[name] = undefined;
+        if (name === "password" || name === "passwordRepeat") {
+            if (name === "password" && value !== this.state.passwordRepeat) {
+                errors.passwordRepeat = "Password Mismatch";
+            } else if (name === "passwordRepeat" && value !== this.state.password) {
+                errors.passwordRepeat = "Password Mismatch"
+            } else {
+                errors.passwordRepeat = undefined
+            }
+        }
         this.setState({
-            [name]: value
+            [name]: value,
+            errors
         })
     }
 
@@ -33,63 +48,62 @@ class UserSignupPage extends React.Component {
 
         try {
             const response = await signup(body);
-        } catch (error) { }
+        } catch (error) {
+            if (error.response.data.validationErrors) {
+                this.setState({ errors: error.response.data.validationErrors })
+            }
+        }
 
         this.setState({ pendingApiCall: false })
 
     }
 
     render() {
-        const { pendingApiCall } = this.state;
+        const { pendingApiCall, errors } = this.state;
+
+        const { userName, displayName, password, passwordRepeat } = errors;
 
         return (
             <div className="container">
-                <form style={{ margin: "12.5% 0 0 0" }}>
-                    <div className="row">
-                        <div className="col-12">
-                            <h1 className="text-center">Sign Up</h1>
-                        </div>
+                <div className="row" style={{ margin: "12.5% 0 12.5% 0" }}>
+                    <div className="col-md-6 col-12">
+                        <img src={Logo} alt="logo" width="100%" height="100%" />
                     </div>
-                    <div className="row">
-                        <div className="col-8 offset-2">
-                            <div className="form-group">
-                                <label>User Name :</label>
-                                <input className="form-control" name="userName" onChange={this.onChange} />
+                    <div className="col-md-6 col-12">
+                        <form>
+                            <div className="row">
+                                <div className="col-sm-12 col-12">
+                                    <Input name="userName" label="User Name :" error={userName} onChange={this.onChange} />
+                                </div>
+                            </div >
+                            <div className="row">
+                                <div className="col-sm-12 col-12">
+                                    <Input name="displayName" label="Display Name :" error={displayName} onChange={this.onChange} />
+                                </div>
+                            </div >
+                            <div className="row">
+                                <div className="col-sm-12 col-12">
+                                    <Input type="password" name="password" label="Password :" error={password} onChange={this.onChange} />
+                                </div>
+                            </div >
+                            <div className="row">
+                                <div className="col-sm-12 col-12">
+                                    <Input type="password" name="passwordRepeat" label="Password Repeat :" error={passwordRepeat} onChange={this.onChange} />
+                                </div>
+                            </div >
+                            <div className="row">
+                                <div className="col-sm-12 col-12">
+                                    <div className="text-center">
+                                        <button className="btn btn-primary" onClick={this.onClickSignup} disabled={pendingApiCall || passwordRepeat !== undefined}>
+                                            {pendingApiCall && <span className="spinner-border spinner-border-sm"></span>}
+                                            Sign Up
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </form>
                     </div>
-                    <div className="row">
-                        <div className="col-8 offset-2">
-                            <div className="form-group">
-                                <label>Display Name :</label>
-                                <input className="form-control" name="displayName" onChange={this.onChange} />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="row">
-                        <div className="col-4 offset-2">
-                            <div className="form-group">
-                                <label>Password :</label>
-                                <input className="form-control" name="password" type="password" onChange={this.onChange} />
-                            </div>
-                        </div>
-                        <div className="col-4">
-                            <div className="form-group">
-                                <label>Password Repeat :</label>
-                                <input className="form-control" name="passwordRepeat" type="password" onChange={this.onChange} />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="row">
-                        <div className="col-12">
-                            <div className="text-center">
-                                <button className="btn btn-primary" onClick={this.onClickSignup} disabled={pendingApiCall}>
-                                    {pendingApiCall && <span className="spinner-border spinner-border-sm"></span>} Sign Up
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
+                </div>
             </div>
         );
     }
